@@ -119,6 +119,7 @@ class GonjacHandler(SocketServer.BaseRequestHandler):
                 self.request.send("Permission denied for host %s" % request_ip)
             
     def parse_request(self, reqstr):
+        """Parse data from request, and attempt to parse as a dict."""
         try:
             obj = ast.literal_eval(reqstr)
         except (SyntaxError, ValueError):
