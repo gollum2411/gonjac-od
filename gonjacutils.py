@@ -30,22 +30,19 @@ class GonjacConfig(object):
     
     @classmethod
     def set_remote_ip(cls, ip):
-        if not cls.conf:
-            cls.read()
+        cls.read()
         cls.conf.set("remote", "ip", ip)
         cls.conf.write(open(gonjaccore.CONF, 'w'))
         cls.read()
     
     @classmethod
     def get_remote_ip(cls):
-        if not cls.conf:
-            cls.read()
+        cls.read()
         return cls.conf.get("remote", "ip").strip('"')
     
     @classmethod
     def get_platform(cls):
-        if not cls.conf:
-            cls.read()
+        cls.read()
         return cls.conf.get("sysinfo", "platform").strip('"')
 
 def is_valid_ip(str_ip):
@@ -128,4 +125,3 @@ def validate_remote_newjob(req, remote_client):
         remote_client.send("No branch specified")
         raise ValueError("No branch specified")
     
-
