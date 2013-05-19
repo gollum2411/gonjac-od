@@ -17,6 +17,7 @@ try:
     import psutil
 except Exception:
     sys.stderr.write(gonjacerrors.INSTALL_PSUTIL)
+    sys.exit(-1)
 
 GONJAC_PORT = 6666
 LOCALHOST = "127.0.0.1"

@@ -3,10 +3,13 @@ import sys
 import re
 import ConfigParser
 
+import gonjacerrors
+
 try:
     import psutil
 except Exception:
-    sys.stderr.write("Please install psutil")
+    sys.stderr.write(gonjacerrors.INSTALL_PSUTIL)
+    sys.exit(-1)
 
 import gonjacserver
 import gonjaccore
