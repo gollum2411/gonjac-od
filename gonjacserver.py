@@ -7,6 +7,7 @@ import re
 import threading
 import signal
 import copy
+import subprocess
 
 import gonjaccore
 import gonjacreqs
@@ -187,17 +188,25 @@ class GonjacHandler(SocketServer.BaseRequestHandler):
                 req[gonjacreqs.GENERIC_REPO],
                 req[gonjacreqs.GENERIC_BRANCH]
             )
-            req = GonjacRemoteRequest(
+            jobstart_req = GonjacRemoteRequest(
                 gonjacreqs.REMOTE_JOBSTART
             )
-            req[gonjacreqs.GENERIC_BUILD_ID] = builder.build_id
-            self.request.send(req.to_str())
+            jobstart_req[gonjacreqs.GENERIC_BUILD_ID] = builder.build_id
+            self.request.send(jobstart_req.to_str())
             if builder.start_job():
                 #Build succeeded
                 req.type = gonjacreqs.GENERIC_JOBDONE
+                req[gonjacreqs.GENERIC_KEY_TYPE] = \
+                        gonjacreqs.GENERIC_JOBDONE
                 req[gonjacreqs.GENERIC_URL] = \
                         "%s" % builder.tar_name
-                print "Finished building %s" % builder.tar_name
+                #Open new socket to send jobdone to master
+                sock = get_simple_client()
+                sock.connect((
+                    self.client_address[0],
+                    GONJAC_PORT))
+                sock.send(req.to_str())
+                sock.close()
             else:
                 print "Build failed"
                 
@@ -217,9 +226,7 @@ def init_gonjac_server():
     child_pid = os.fork()
     if child_pid == 0:
         try:
-            os.system("mkdir -p /tmp/gonjac-od;\
-                  pushd /tmp/gonjac-od;\
-                  python -m 'SimpleHTTPServer'")
+            subprocess.Popen("./start-web.sh")
             local_server_info = ("0.0.0.0", GONJAC_PORT)
             local_server = GonjacServer(local_server_info,
                                         GonjacHandler, False)
@@ -260,7 +267,6 @@ def is_gonjac_server_running():
 def do_register(server_ip):
     if not gonjacutils.is_valid_ip(server_ip):
         raise ValueError("Invalid IP")
-    
     sock = get_simple_client()
     req = GonjacLocalRequest(gonjacreqs.LOCAL_REGISTER)
     req[gonjacreqs.GENERIC_KEY_IP] = server_ip

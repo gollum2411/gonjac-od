@@ -8,6 +8,7 @@ GENERIC_BRANCH = "branch"
 GENERIC_REPO = "repo"
 GENERIC_FLAGS = "flags"
 GENERIC_URL = "url"
+GENERIC_CUSTOMID = "customid"
 
 LOCAL_REGISTER = "register"
 LOCAL_UNREGISTER = "unregister"
@@ -32,7 +33,8 @@ VALID_REMOTE_REQ_KEYS=[GENERIC_KEY_TYPE,
                        GENERIC_REPO,
                        GENERIC_FLAGS,
                        GENERIC_BUILD_ID,
-                       GENERIC_URL]
+                       GENERIC_URL,
+                       GENERIC_CUSTOMID]
 
 VALID_REMOTE_REQ_TYPES=[REMOTE_REGACK,
                         REMOTE_NEWJOB,
