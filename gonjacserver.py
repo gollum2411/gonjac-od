@@ -12,6 +12,7 @@ import gonjaccore
 import gonjacreqs
 import gonjacutils
 import gonjacerrors
+import gonjacbuilder
 
 try:
     import psutil
@@ -113,9 +114,13 @@ class GonjacHandler(SocketServer.BaseRequestHandler):
                     print "\t%s : %s" % (k ,v)
                 self.execute_local_req(local_req)
             elif request_ip == gonjacutils.GonjacConfig.get_remote_ip():
-                print "Request from master server:,", str(req)
                 remote_req = GonjacRemoteRequest(req["type"], req)
                 validate_req(remote_req, self.request)
+                print "Request from master server"
+                for k, v in remote_req.iteritems():
+                    print "\t%s : %s" % (k, v)
+                self.execute_remote_request(remote_req)
+                
             else:
                 self.request.send("Permission denied for host %s" % request_ip)
             
@@ -176,8 +181,26 @@ class GonjacHandler(SocketServer.BaseRequestHandler):
             elif req.type == gonjacreqs.REMOTE_TESTCONNDENY:
                 self.request.send("fail")
             
-    
-            
+    def execute_remote_request(self, req):
+        if req.type == gonjacreqs.REMOTE_NEWJOB:
+            builder = gonjacbuilder.GonjacBuilder(
+                req[gonjacreqs.GENERIC_REPO],
+                req[gonjacreqs.GENERIC_BRANCH]
+            )
+            req = GonjacRemoteRequest(
+                gonjacreqs.REMOTE_JOBSTART
+            )
+            req[gonjacreqs.GENERIC_BUILD_ID] = builder.build_id
+            self.request.send(req.to_str())
+            if builder.start_job():
+                #Build succeeded
+                req.type = gonjacreqs.GENERIC_JOBDONE
+                req[gonjacreqs.GENERIC_URL] = \
+                        "%s" % builder.tar_name
+                print "Finished building %s" % builder.tar_name
+            else:
+                print "Build failed"
+                
 class GonjacServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     def __init__(self, server_info, handler, autobind=True):
         SocketServer.TCPServer.__init__(self, server_info, handler, autobind)
@@ -194,6 +217,9 @@ def init_gonjac_server():
     child_pid = os.fork()
     if child_pid == 0:
         try:
+            os.system("mkdir -p /tmp/gonjac-od;\
+                  pushd /tmp/gonjac-od;\
+                  python -m 'SimpleHTTPServer'")
             local_server_info = ("0.0.0.0", GONJAC_PORT)
             local_server = GonjacServer(local_server_info,
                                         GonjacHandler, False)
@@ -215,7 +241,9 @@ def stop_gonjac_server():
             cmd = reduce(lambda string, item: string + item, proc.cmdline, " ")
             if "gonjac" in cmd and "--startserver" in cmd:
                 proc.kill()
-                return
+            if "SimpleHTTPServer" in cmd:
+                proc.kill()
+                
     sys.stderr.write(gonjacerrors.SERVER_NOT_RUNNING)
     sys.exit(0)
     

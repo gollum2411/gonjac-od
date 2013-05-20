@@ -2,6 +2,8 @@ import os
 import sys
 import re
 import ConfigParser
+import random
+import string
 
 import gonjacerrors
 
@@ -44,6 +46,12 @@ class GonjacConfig(object):
     def get_platform(cls):
         cls.read()
         return cls.conf.get("sysinfo", "platform").strip('"')
+
+def get_random_id(size=10):
+    chars = string.ascii_uppercase
+    chars = chars + string.digits
+    return ''.join(random.choice(chars) for x in range(size))
+
 
 def is_valid_ip(str_ip):
     if re.match(gonjaccore.IP_REGEX, str_ip):
@@ -119,9 +127,9 @@ def validate_remote_type(req, remote_client):
         raise ValueError(errstring)
 
 def validate_remote_newjob(req, remote_client):
-    if not req[gonjacreqs.REMOTE_REPO]:
+    if not req[gonjacreqs.GENERIC_REPO]:
         remote_client.send("No repo specified")
-    if not req[gonjacreqs.REMOTE_BRANCH]:
+    if not req[gonjacreqs.GENERIC_BRANCH]:
         remote_client.send("No branch specified")
         raise ValueError("No branch specified")
     

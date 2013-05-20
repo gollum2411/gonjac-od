@@ -56,6 +56,7 @@ repo_out="$gonjac_dir/$repo_name-$branch-$ID"
 tar_name="$repo_name-$branch-$ID"
 
 pushd $repo_dir || abort "No such repo"
+git pull
 git checkout $branch || abort "Branch does not exist"
 make clean
 make -j || abort "Compilation failed"
